@@ -95,4 +95,10 @@ diffviz_out <- rename(diffviz_out,
                       Change_Date = timestamp_new,
                       URL = hyperlink)
 
+# add "critical" fields here - defined as fields that go from having a value to having no value
+critical_list = c('complaint status', 'eligibility_start_date')
+diffviz_out = diffviz_out %>%
+  mutate(Criticality = ifelse(Field %in% critical_list & is.na(Previous_Value)==F & 
+                                is.na(Current_Value)==T, "High", "Normal"))
+
 write.csv(diffviz_out,"diffviz_out.csv", row.names = F)
