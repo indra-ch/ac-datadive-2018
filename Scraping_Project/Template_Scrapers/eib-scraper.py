@@ -96,9 +96,10 @@ def scrape(html):
             documents = get_project_documents(page)
             if documents:
                 cleaned_id = project_id.replace('/', '_').replace(': ', '')
-                scraperutils.check_make_directory(cleaned_id)
+                scraperutils.check_make_directory('eib', cleaned_id)
                 for doc in documents.split(','):
                     filepath = scraperutils.download_project_documents('http://' + doc,
+                                                                       'eib',
                                                                        cleaned_id)
             project_data.append([idx, clean(project_id), clean(filer), documents])
         else:

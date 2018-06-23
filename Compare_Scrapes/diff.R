@@ -6,7 +6,7 @@ library(dplyr) # data manip
 library(tidyr)
 
 new.file.scrap.date <- Sys.Date()
-df_old_name <- "df_old_20180527-fakedate.csv"
+df_old_name <- "df_old_20180527-fakedate.csv" # change these names to the files you want to compare
 df_new_name <- "df_new_20180623.csv"
 
 df_old <- read.csv(df_old_name,stringsAsFactors=FALSE)
@@ -94,5 +94,11 @@ diffviz_out <- rename(diffviz_out,
                       Current_Value = value_new,
                       Change_Date = timestamp_new,
                       URL = hyperlink)
+
+# add "critical" fields here - defined as fields that go from having a value to having no value
+critical_list = c('complaint status', 'eligibility_start_date')
+diffviz_out = diffviz_out %>%
+  mutate(Criticality = ifelse(Field %in% critical_list & is.na(Previous_Value)==F & 
+                                is.na(Current_Value)==T, "High", "Normal"))
 
 write.csv(diffviz_out,"diffviz_out.csv", row.names = F)
