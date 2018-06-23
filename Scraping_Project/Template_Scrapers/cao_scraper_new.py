@@ -25,29 +25,33 @@ logger = logging.getLogger(__name__)
 
 def get_doc_links(page_soup):
     doc_links=[]
-    doc = page_soup.find('p',{'id':'ctl00_MainContent_documentLink'}).find('a').get('href')
-    doc_link = "http://www.cao-ombudsman.org/cases/" + doc.split("'")[1]
-    doc_links.append(doc_link)
+    try:
+        doc = page_soup.find('p',{'id':'ctl00_MainContent_documentLink'}).find('a').get('href')
+        doc_link = "http://www.cao-ombudsman.org/cases/" + doc.split("'")[1]
+        doc_links.append(doc_link)
+    except:
+        doc_links.append("")
     return doc_links
 def parse_pdf_links(doc_links):
     for url in doc_links:
-        res = requests.get(url)
-        if res.status_code != 200:
-            logger.info("%s is broken".format(url))
-            continue    
-        #get doc page data
-        try:
-            doc_soup = BeautifulSoup(res.text, 'html.parser')
-        except: 
-            doc_soup = ""
-            continue
-        try:
-            pdf_links = doc_soup.findAll('a')
-            pdf_links_list = ['http://www.cao-ombudsman.org/cases/document-links/' + link.get('href') for link in pdf_links[1:]]
-            pdf_links_comma_seperated = ", ".join(pdf_links_list)
-        except:
+        if url == "":
+            logger.info("pdf document url doesn't exist")
             pdf_links_comma_seperated = ""
+        else:
+            res = requests.get(url)
+            try:
+                doc_soup = BeautifulSoup(res.text, 'html.parser')
+                try:
+                    pdf_links = doc_soup.findAll('a')
+                    pdf_links_list = ['http://www.cao-ombudsman.org/cases/document-links/' + link.get('href') for link in pdf_links[1:]]
+                    pdf_links_comma_seperated = ", ".join(pdf_links_list)
+                except:
+                    pdf_links_comma_seperated = ""
+            except:
+                doc_soup = ""
+                continue
     return pdf_links_comma_seperated
+
 
 def get_page_source(url):
     logger.info("Starting chrome driver")
@@ -350,7 +354,7 @@ def process_project_urls(list_of_project_links):
     # Starting to iterate over the project links and parse the required fields
     for l in list_of_project_links:
         project_dict = {}
-        time.sleep(random.choice(range(5,10)))
+        time.sleep(random.choice(range(1,3)))
         res = requests.get(l)
         if res.status_code != 200:
             logger.info("%s is broken".format(l))
