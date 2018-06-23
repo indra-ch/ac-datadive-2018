@@ -6,7 +6,7 @@ library(dplyr) # data manip
 library(tidyr)
 
 new.file.scrap.date <- Sys.Date()
-df_old_name <- "df_old_20180527-fakedate.csv"
+df_old_name <- "df_old_20180527-fakedate.csv" # change these names to the files you want to compare
 df_new_name <- "df_new_20180623.csv"
 
 df_old <- read.csv(df_old_name,stringsAsFactors=FALSE)
