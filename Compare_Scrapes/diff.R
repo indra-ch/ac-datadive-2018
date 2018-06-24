@@ -5,9 +5,8 @@ setwd("./ac-datadive-2018/Compare_Scrapes/")
 library(dplyr) # data manip
 library(tidyr)
 
-new.file.scrap.date <- Sys.Date()
-df_old_name <- "df_old_20180527-fakedate.csv" # change these names to the files you want to compare
-df_new_name <- "df_new_20180623.csv"
+df_old_name <- "unified_scrape - 20180524.csv" # change these names to the files you want to compare
+df_new_name <- "unified_scrape - 20180624.csv"
 
 df_old <- read.csv(df_old_name,stringsAsFactors=FALSE)
 df_new <- read.csv(df_new_name,stringsAsFactors = FALSE)
@@ -17,8 +16,8 @@ new.file.scrap.date <- substr(as.numeric(gsub("\\D", "", df_new_name)) , start =
 old.file.scrap.date <- substr(as.numeric(gsub("\\D", "", df_old_name)) , start = 1, stop = 8)
 
 # create unique ID
-df_old$pid <- paste(df_old$IAM_id, df_old$project_id, df_old$project_name, sep="-")
-df_new$pid <- paste(df_new$IAM_id, df_new$project_id, df_new$project_name, sep="-")
+df_old$pid <- paste(df_old$IAM_ID, df_old$PROJECT_ID, df_old$PROJECT_NAME, sep="-")
+df_new$pid <- paste(df_new$IAM_ID, df_new$PROJECT_ID, df_new$PROJECT_NAME, sep="-")
 
 df_old$newold <- "old"
 df_new$newold <- "new"
@@ -72,7 +71,7 @@ diffviz$New_or_Lost[!is.na(diffviz$mergebreak)] <- diffviz$mergebreak[!is.na(dif
 #diffviz_out <- diffviz[c("pid.universal","mergebreak","field.new","value.old","value.new","timestamp.new")]
 
 # gather project names and any other common data that we want to tie into the final output
-project_names <- rbind(df_new[c("pid","project_name","hyperlink")],df_old[c("pid","project_name","hyperlink")])
+project_names <- rbind(df_new[c("pid","PROJECT_NAME","HYPERLINK")],df_old[c("pid","PROJECT_NAME","HYPERLINK")])
 project_names <- project_names[order(colnames(project_names))]
 project_names <- project_names[!duplicated(project_names),]
 
@@ -83,27 +82,27 @@ diffviz <- merge(diffviz,project_names,by.x="pid_universal",by.y="pid",all.x=TRU
 diffviz$timestamp_new <- new.file.scrap.date 
 
 # final output
-diffviz_out <- diffviz[c("pid_universal","project_name","field_new","value_old","value_new","timestamp_new","New_or_Lost","hyperlink")]
+diffviz_out <- diffviz[c("pid_universal","PROJECT_NAME","field_new","value_old","value_new","timestamp_new","New_or_Lost","HYPERLINK")]
 
 diffviz_out <- diffviz_out[order(diffviz_out$New_or_Lost,diffviz_out$pid_universal),]
 
 diffviz_out <- rename(diffviz_out, 
                       PID = pid_universal,
-                      Project_Name = project_name,
+                      Project_Name = PROJECT_NAME,
                       Field = field_new,
                       Previous_Value = value_old,
                       Current_Value = value_new,
                       Change_Date = timestamp_new,
-                      URL = hyperlink)
+                      URL = HYPERLINK)
 
 # add "critical" fields here - defined as fields that go from having a value to having no value
-critical_list = c('complaint_status', 'eligibility_start_date')
+critical_list = c('COMPLAINT_STATUS', 'ELIGIBILITY_START_DATE')
 diffviz_out = diffviz_out %>%
   mutate(Criticality = ifelse(Field %in% critical_list & is.na(Previous_Value)==F & 
                                 is.na(Current_Value)==T, "High", "Normal"))
 
 # save a file for just the current changes
-filename = paste('current_change_log', old.file.scrap.date, new.file.scrap.date, sep='_')
+filename = paste('current_change_log', old.file.scrap.date, new.file.scrap.date,".csv", sep='_')
 write.csv(diffviz_out, filename, row.names = F)
 
 # read in master change long, add new changes, and save
