@@ -108,7 +108,7 @@ def scrape(html):
             project_data.append([idx, None, None, None])
         count += 1
         if count % 25 ==0:
-            print count
+            print(count)
 
     print('Number of 404 Responses', count404)
 

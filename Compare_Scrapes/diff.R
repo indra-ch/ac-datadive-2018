@@ -102,9 +102,11 @@ diffviz_out = diffviz_out %>%
   mutate(Criticality = ifelse(Field %in% critical_list & is.na(Previous_Value)==F & 
                                 is.na(Current_Value)==T, "High", "Normal"))
 
+# save a file for just the current changes
 filename = paste('current_change_log', old.file.scrap.date, new.file.scrap.date, sep='_')
 write.csv(diffviz_out, filename, row.names = F)
 
+# read in master change long, add new changes, and save
 master_changes = read.csv('master_change_log.csv', stringsAsFactors = F)
 master_changes = rbind(master_changes, diffviz_out)
 write.csv(master_changes, 'master_change_log.csv', stringsAsFactors = F)
