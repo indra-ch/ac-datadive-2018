@@ -1,0 +1,49 @@
+library(e1071)
+library(tidyverse)
+
+#Add Eligibility duration period to our data
+complaintseligdiff <- mutate(complaints,Eligdur = as.numeric(
+  difftime(Eligibility_End,Eligibility_Start, units = "days")))
+
+#Remove NA values and where eligibility duration is negative
+eligdatesbad <- complaintseligdiff$Eligdur < 0 & !is.na(complaintseligdiff$Eligdur)
+complaintseligdiff <- complaintseligdiff[!eligdatesbad,]
+complaintseligdiff <- complaintseligdiff[!is.na(complaintseligdiff$Eligdur),]
+
+#Here you can view the mean, standard deviation, and CV of 
+#IAM eligibility duration
+EligDurTable <- complaintseligdiff %>%
+  group_by(IAM,Eligibility_Status) %>% summarize(MTTE = mean(Eligdur), SDTTE = sd(Eligdur), CV = MTTE/SDTTE, Count = n()) %>% 
+  arrange(Eligibility_Status,desc(MTTE),desc(SDTTE))
+
+IAM <- names(which(table(filter(EligDurTable, Count > 5)$IAM) == 2))
+
+#Only ABD_SPF_CRP, IDB_MICI, IFC_CAO, and WB_Panel have enough
+#samples of eligibility to bear investigation
+
+meantests = list()
+IAMresults = c()
+
+#Run population t tests on the 4 IAMs listed above, see which ones
+#have statistical significance in the difference between time
+#to determine eligibility vs. ineligibility
+for (i in 1:length(IAM)) {
+  withoutcome = complaintseligdiff[complaintseligdiff$Eligibility_Status ==
+                                       "closed_with_outcome" &
+                                 complaintseligdiff$IAM == IAM[i],]$Eligdur
+  
+  nooutcome = complaintseligdiff[complaintseligdiff$Eligibility_Status ==
+                                       "closed_without_outcome" &
+                                 complaintseligdiff$IAM == IAM[i],]$Eligdur
+
+  meantests[[i]] = t.test(nooutcome,withoutcome,alternative = "greater")  
+  IAMresults = c(IAMresults,meantests[[i]]$p.value)
+}
+
+GreaterIAM <- IAMresults < 0.05
+
+IAM[GreaterIAM]
+
+#Only IFC_CAO has a statistically significant difference. That is,
+#IFC_CAO takes a lot longer to determine ineligibility than eligibility,
+#measured at a 5% level of significance.

@@ -1,0 +1,2 @@
+complaints_long_issues<-melt(complaints, measure.vars = c(17:26))
+ggplot(complaints_long_issues, aes(x=as.Date(Filing_Date), y=value)) + geom_point(aes(colour=Eligibility_Status)) + theme(axis.text.x = element_text(angle = 90, hjust = 1))

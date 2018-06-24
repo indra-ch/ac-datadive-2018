@@ -1,0 +1,14 @@
+makeMosaic = function(){
+
+    require(RColorBrewer)
+    require(data.table)
+
+    acc = fread("accountability_console_data_cleaned.csv")
+    mosaicTable = as.data.frame(cbind(acc$IAM,acc$ELIGIBLE))
+    cols = brewer.pal(n=3,name="PuOr")[c(1,3)]
+
+    mosaicplot(x=table(mosaicTable),color = cols,xlab="IAM",ylab="Eligibility",main="Who is the worst?",las=c(2,0))
+
+    mosaicTable = as.data.frame(acc[ELIGIBLE==0,.(IAM,Eligibility_Status)])
+    mosaicplot(x=table(mosaicTable),color = cols,xlab="IAM",ylab="Eligibility Status",main="How are they worst?",las=c(2,0))
+}

@@ -1,0 +1,103 @@
+load("accountability_console_data_cleaned.RData")
+load("benchmark_data_cleaned.RData")
+load("benchmark_data_cleaned_melted.RData")
+
+#Load libraries for tidying data and for naiveBayes
+library(tidyverse)
+library(e1071)
+
+#Save out list of IAMs, benchmark questions, column names in
+#complaints table, and column names in benchmark table - there
+#are 215 questions in all
+IAMList <- names(benchmarks_cleaned)[-(1:2)]
+Benchmarkquestions <- benchmarks_cleaned$Benchmark
+complaintnames <- names(complaints)
+#benchmarknames <- paste("Question",1:dim(benchmarks_cleaned)[1], sep = "")
+
+#To add columns
+
+# for(i in 1:length(Benchmarkquestions)){
+#   temptable <- benchmarks_melted %>% 
+#   filter(Benchmark == Benchmarkquestions[i]) %>% 
+#   select(IAM = variable, value = value)
+#   
+#   complaints <- merge(complaints, temptable, by = "IAM",all.x = TRUE)
+#   }
+
+complaintnames <- complaintnames[complaintnames != "IAM"]
+colnames(complaints) <- c("IAM",complaintnames)
+
+complaints[sapply(complaints, is.character)] <- lapply(
+  complaints[sapply(complaints, is.character)], as.factor)
+
+dependentvariables <- c(complaintnames)
+dependentvariables <- dependentvariables[!dependentvariables == "ELIGIBLE"]
+
+varstoremove <- c("Complaint_Name",
+                  "Project",
+                  "External_ID",
+                  "Filer",
+                  "Sector_3",
+                  "Filing_Date",
+                  "Registration_Start",
+                  "Registration_End",
+                  "Registration_Status",
+                  "Eligibility_Start",
+                  "Eligibility_End",
+                  "If_No_Eligibility_Why_3",
+                  "Dispute_Resolution_Start",
+                  "Dispute_Resolution_End",
+                  "Compliance_Review_Start",
+                  "Compliance_Review_End",
+                  "Monitoring_Start",
+                  "Monitoring_End",
+                  "Date_Closed")
+
+#varstoremove2 <- benchmarknames[!lapply(lapply(lapply(complaints[,benchmarknames],levels),unlist),length) >= 2]
+
+dependentvariables <- dependentvariables[!(dependentvariables %in% varstoremove)]
+#dependentvariables <- dependentvariables[!(dependentvariables %in% varstoremove2)]
+
+complaints <- gather(complaints,"dummy","Country",grep("Country",names(complaints)))
+complaints <- gather(complaints,"dummy2","Issues",grep("Issues",names(complaints)))
+complaints <- gather(complaints,"dummy3","IFI_Support",grep("IFI_Support",names(complaints)))
+complaints <- gather(complaints,"dummy4","If_No_Eligibility_Why",grep("If_No_Eligibility_Why",names(complaints)))
+complaints <- gather(complaints,"dummy5","Sector",grep("Sector",names(complaints)))
+
+remove1 <- unlist(lapply(c("Country","Issues","IFI_Support","If_No_Eligibility_Why","Sector"),
+              function(x) grep(x,dependentvariables)))
+dependentvariables <- dependentvariables[-remove1]
+dummyvars <- c("dummy",paste("dummy",2:5,sep=""))
+dependentvariables <- dependentvariables[-unlist(lapply(dummyvars,function(x) grep(x,dependentvariables)))]
+dependentvariables <- c(dependentvariables,"Country",
+                        "Issues",
+                        "IFI_Support",
+                        "If_No_Eligibility_Why",
+                        "Sector")
+
+formulaforreg <- paste(dependentvariables, collapse = " + ")
+formulaforreg <- paste("ELIGIBLE ~",formulaforreg)
+formulaforreg <- as.formula(formulaforreg)
+
+complaintsnoNA <- complaints[with(complaints, !is.na(ELIGIBLE)),]
+complaintsnoNA <- complaintsnoNA[with(complaints, !is.na(Country)),]
+complaintsnoNA <- complaintsnoNA[with(complaints, !is.na(Issues)),]
+complaintsnoNA <- complaintsnoNA[with(complaints, !is.na(IFI_Support)),]
+complaintsnoNA <- complaintsnoNA[with(complaints, !is.na(If_No_Eligibility_Why)),]
+complaintsnoNA <- complaintsnoNA[with(complaints, !is.na(Sector)),]
+
+#dependentvariables <- dependentvariables[!(dependentvariables %in% benchmarknames)]
+
+complaintsnoNA <- complaintsnoNA[,c("ELIGIBLE",dependentvariables)]
+
+numrows <- dim(complaintsnoNA)[1]
+
+set.seed(2000)
+cv <- sample(1:numrows,numrows/10)
+trainset <- complaintsnoNA[-cv,]
+cvset <- complaintsnoNA[cv,]
+
+nB <- naiveBayes(formulaforreg, data = trainset, 
+                 family = "binomial")
+
+predict(nB,data = cv)

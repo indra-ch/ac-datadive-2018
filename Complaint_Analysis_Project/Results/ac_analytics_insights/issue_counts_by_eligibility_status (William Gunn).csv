@@ -1,0 +1,89 @@
+"","value","Eligibility_Status","V1","total_issues","percent_of_total"
+"1","","",147,6054,0.0242814667988107
+"2","","closed_with_outcome",2301,6054,0.3800792864222
+"3","","closed_without_outcome",2131,6054,0.35199867855963
+"4","","not_undertaken",1475,6054,0.243640568219359
+"5","Biodiversity","",3,63,0.0476190476190476
+"6","Biodiversity","closed_with_outcome",46,63,0.73015873015873
+"7","Biodiversity","closed_without_outcome",11,63,0.174603174603175
+"8","Biodiversity","not_undertaken",3,63,0.0476190476190476
+"9","Consultation and disclosure","",7,234,0.0299145299145299
+"10","Consultation and disclosure","closed_with_outcome",169,234,0.722222222222222
+"11","Consultation and disclosure","closed_without_outcome",47,234,0.200854700854701
+"12","Consultation and disclosure","not_undertaken",11,234,0.047008547008547
+"13","Corruption/fraud","",0,9,0
+"14","Corruption/fraud","closed_with_outcome",2,9,0.222222222222222
+"15","Corruption/fraud","closed_without_outcome",5,9,0.555555555555556
+"16","Corruption/fraud","not_undertaken",2,9,0.222222222222222
+"17","Cultural heritage","",4,54,0.0740740740740741
+"18","Cultural heritage","closed_with_outcome",42,54,0.777777777777778
+"19","Cultural heritage","closed_without_outcome",6,54,0.111111111111111
+"20","Cultural heritage","not_undertaken",2,54,0.037037037037037
+"21","Displacement","",11,190,0.0578947368421053
+"22","Displacement","closed_with_outcome",132,190,0.694736842105263
+"23","Displacement","closed_without_outcome",31,190,0.163157894736842
+"24","Displacement","not_undertaken",16,190,0.0842105263157895
+"25","Due diligence","",3,222,0.0135135135135135
+"26","Due diligence","closed_with_outcome",184,222,0.828828828828829
+"27","Due diligence","closed_without_outcome",28,222,0.126126126126126
+"28","Due diligence","not_undertaken",7,222,0.0315315315315315
+"29","Gender-based violence","",0,4,0
+"30","Gender-based violence","closed_with_outcome",3,4,0.75
+"31","Gender-based violence","closed_without_outcome",1,4,0.25
+"32","Gender-based violence","not_undertaken",0,4,0
+"33","Human rights","",2,43,0.0465116279069767
+"34","Human rights","closed_with_outcome",36,43,0.837209302325581
+"35","Human rights","closed_without_outcome",3,43,0.0697674418604651
+"36","Human rights","not_undertaken",2,43,0.0465116279069767
+"37","Indigenous peoples","",3,59,0.0508474576271186
+"38","Indigenous peoples","closed_with_outcome",50,59,0.847457627118644
+"39","Indigenous peoples","closed_without_outcome",4,59,0.0677966101694915
+"40","Indigenous peoples","not_undertaken",2,59,0.0338983050847458
+"41","Labor","",3,45,0.0666666666666667
+"42","Labor","closed_with_outcome",41,45,0.911111111111111
+"43","Labor","closed_without_outcome",1,45,0.0222222222222222
+"44","Labor","not_undertaken",0,45,0
+"45","Livelihoods","",4,158,0.0253164556962025
+"46","Livelihoods","closed_with_outcome",124,158,0.784810126582278
+"47","Livelihoods","closed_without_outcome",25,158,0.158227848101266
+"48","Livelihoods","not_undertaken",5,158,0.0316455696202532
+"49","Other","",3,363,0.00826446280991736
+"50","Other","closed_with_outcome",62,363,0.170798898071625
+"51","Other","closed_without_outcome",150,363,0.413223140495868
+"52","Other","not_undertaken",148,363,0.40771349862259
+"53","Other community health and safety issues","",6,150,0.04
+"54","Other community health and safety issues","closed_with_outcome",113,150,0.753333333333333
+"55","Other community health and safety issues","closed_without_outcome",23,150,0.153333333333333
+"56","Other community health and safety issues","not_undertaken",8,150,0.0533333333333333
+"57","Other environmental","",8,132,0.0606060606060606
+"58","Other environmental","closed_with_outcome",94,132,0.712121212121212
+"59","Other environmental","closed_without_outcome",24,132,0.181818181818182
+"60","Other environmental","not_undertaken",6,132,0.0454545454545455
+"61","Other gender-related issues","",0,8,0
+"62","Other gender-related issues","closed_with_outcome",6,8,0.75
+"63","Other gender-related issues","closed_without_outcome",2,8,0.25
+"64","Other gender-related issues","not_undertaken",0,8,0
+"65","Other retaliation","",3,23,0.130434782608696
+"66","Other retaliation","closed_with_outcome",17,23,0.739130434782609
+"67","Other retaliation","closed_without_outcome",3,23,0.130434782608696
+"68","Other retaliation","not_undertaken",0,23,0
+"69","Pollution","",5,127,0.0393700787401575
+"70","Pollution","closed_with_outcome",104,127,0.818897637795276
+"71","Pollution","closed_without_outcome",15,127,0.118110236220472
+"72","Pollution","not_undertaken",3,127,0.0236220472440945
+"73","Procurement","",0,21,0
+"74","Procurement","closed_with_outcome",0,21,0
+"75","Procurement","closed_without_outcome",21,21,1
+"76","Procurement","not_undertaken",0,21,0
+"77","Property damage","",2,45,0.0444444444444444
+"78","Property damage","closed_with_outcome",36,45,0.8
+"79","Property damage","closed_without_outcome",4,45,0.0888888888888889
+"80","Property damage","not_undertaken",3,45,0.0666666666666667
+"81","Violence against the community","",3,24,0.125
+"82","Violence against the community","closed_with_outcome",19,24,0.791666666666667
+"83","Violence against the community","closed_without_outcome",1,24,0.0416666666666667
+"84","Violence against the community","not_undertaken",1,24,0.0416666666666667
+"85","Water","",3,122,0.0245901639344262
+"86","Water","closed_with_outcome",89,122,0.729508196721312
+"87","Water","closed_without_outcome",24,122,0.19672131147541
+"88","Water","not_undertaken",6,122,0.0491803278688525

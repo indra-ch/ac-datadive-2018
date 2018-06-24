@@ -1,0 +1,8 @@
+complaintseligdiff <- mutate(complaints,Eligdur = as.numeric(
+    difftime(Eligibility_End,Eligibility_Start, units = "days")))
+eligdatesbad <- complaintseligdiff$Eligdur < 0 & !is.na(complaintseligdiff$Eligdur)
+sum(eligdatesbad)
+
+#30 examples of eligibility dates where the start is after the end
+
+table(complaintseligdiff[eligdatesbad,]$IAM)

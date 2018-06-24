@@ -1,0 +1,14 @@
+#get a matrix of outcomes count by iam c=complaint data
+c_iam_count<-c %>% filter(iam %in% b$iam) %>%
+     group_by(iam, status) %>%
+     summarise(count=n()) %>%
+     spread(key=status, value=count, fill = 0) %>%
+     clean_names() %>%
+     left_join(c %>% group_by(iam) %>% count()) %>%
+     mutate(percent_result=closed_with_results/n)
+ggplot(c_iam_count, aes(x=percent_result, y=n))+
+     geom_point(size=2, color="red")+
+     geom_hline(yintercept=mean(c_iam_count$n), linetype="dashed")+
+     annotate("text", label="mean # complaints", x = 0, y=mean(c_iam_count$n), vjust=0, hjust=0)+
+     labs(title="Volume of Complaints Does Not Appear\nto Have an Impact on Rate of Completion With Result", x="% Completed With Result", y="Number of Complaints")+
+     theme_bw()

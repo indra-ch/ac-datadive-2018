@@ -1,0 +1,156 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Jun 23 10:30:48 2018
+
+@author: johal
+"""
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#import the data
+dfa = pd.read_csv('Counsel_data.csv', encoding = "ISO-8859-1")
+dfb = pd.read_csv('benchmark_data.csv', encoding = "ISO-8859-1")
+
+### create a 1,0 indicator to determine the transition of claims in the pipeline
+#### Create Step 1 Eligibility data mapping
+dfa['Eligibility_Status'].value_counts()
+
+eli_cl_w = dfa[dfa['Eligibility_Status']=='closed_with_outcome']
+eli_cl_w['step1_eligibility']=1
+
+eli_cl_wo = dfa[dfa['Eligibility_Status']=='closed_without_outcome']
+eli_cl_wo['step1_eligibility']=1
+
+eli_no = dfa[dfa['Eligibility_Status']=='not_undertaken']
+eli_no['step1_eligibility']=0
+
+eli_concat = pd.concat([eli_cl_w,eli_cl_wo, eli_no],axis=0)
+
+#### Create Step 2 Dispute Resolution
+dfa['Dispute_Resolution_Status'].value_counts()
+
+dr_cl_w = dfa[dfa['Dispute_Resolution_Status']=='closed_with_outcome']
+dr_cl_w['step2_disp_res']=1
+
+dr_cl_wo = dfa[dfa['Dispute_Resolution_Status']=='closed_without_outcome']
+dr_cl_wo['step2_disp_res']=1
+
+dr_no = dfa[dfa['Dispute_Resolution_Status']=='not_undertaken']
+dr_no['step2_disp_res']=0
+
+dr_concat = pd.concat([dr_cl_w,dr_cl_wo, dr_no],axis=0)
+
+#### Create Step 3 Compliance Review
+dfa['Compliance_Review_Status'].value_counts()
+cr_cl_w = dfa[dfa['Compliance_Review_Status']=='closed_with_outcome']
+cr_cl_w['step3_com_rev']=1
+
+cr_in_pro = dfa[dfa['Compliance_Review_Status']=='in_progress']
+cr_in_pro['step3_com_rev']=np.nan
+
+cr_no = dfa[dfa['Compliance_Review_Status']=='not_undertaken']
+cr_no['step3_com_rev']=0
+
+cr_concat = pd.concat([cr_cl_w,cr_in_pro, cr_no],axis=0)
+
+#### Create Step 4 Monitoring
+dfa['Monitoring_Status'].value_counts()
+mnt_cl_w = dfa[dfa['Monitoring_Status']=='closed_with_outcome']
+mnt_cl_w['step4_monitoring']=1
+
+mnt_in_pro = dfa[dfa['Monitoring_Status']=='in_progress']
+mnt_in_pro['step4_monitoring']=np.nan
+
+mnt_no = dfa[dfa['Monitoring_Status']=='not_undertaken']
+mnt_no['step4_monitoring']=0
+
+mnt_concat = pd.concat([mnt_cl_w,mnt_in_pro, mnt_no],axis=0)
+
+### Merge Concatenated datasets
+merge_data = pd.merge(eli_concat,dr_concat, how = 'outer')
+merge_data = pd.merge(merge_data, cr_concat, how = 'outer')
+merge_data = pd.merge(merge_data, mnt_concat, how = 'outer')
+dfa= merge_data
+
+
+#Summary to how filed claims pass through pipeline
+dfa['step1_eligibility'].sum()
+dfa['step2_disp_res'].sum()
+dfa['step3_com_rev'].sum()
+dfa['step4_monitoring'].sum()
+
+# Graph the number of observation through the stages of the pipeline
+# First Based by IAM institutions
+graph = dfa.groupby('IAM')
+graph['step1_eligibility'].sum().plot(kind='bar')
+graph['step2_disp_res'].sum().plot(kind='bar')
+graph['step3_com_rev'].sum().plot(kind='bar')
+graph['step4_monitoring'].sum().plot(kind='bar')
+
+# calculate the success rate through the pipeline
+a= graph['step1_eligibility'].sum()
+b = graph['step2_disp_res'].sum()
+c=graph['step3_com_rev'].sum()
+d=graph['step4_monitoring'].sum()
+f = pd.concat([a,b,c,d], axis=1)
+
+f['trans1']=f['step2_disp_res']/f['step1_eligibility']
+f['trans2']=f['step3_com_rev']/f['step1_eligibility']
+f['trans3']=f['step4_monitoring']/f['step1_eligibility']
+
+# Second Based by Sector
+
+graph2 = dfa.groupby('Sector_1')
+graph2['step1_eligibility'].sum().plot(kind='bar')
+graph2['step2_disp_res'].sum().plot(kind='bar')
+graph2['step3_com_rev'].sum().plot(kind='bar')
+graph2['step4_monitoring'].sum().plot(kind='bar')
+
+a1= graph2['step1_eligibility'].sum()
+b1 = graph2['step2_disp_res'].sum()
+c1=graph2['step3_com_rev'].sum()
+d1=graph2['step4_monitoring'].sum()
+f1 = pd.concat([a1,b1,c1,d1], axis=1)
+
+f1['trans1']=f1['step2_disp_res']/f1['step1_eligibility']
+f1['trans2']=f1['step3_com_rev']/f1['step1_eligibility']
+f1['trans3']=f1['step4_monitoring']/f1['step1_eligibility']
+
+# Third by Country
+graph3 = dfa.groupby('Country_1')
+graph3['step1_eligibility'].sum().plot(kind='bar')
+graph3['step2_disp_res'].sum().plot(kind='bar')
+graph3['step3_com_rev'].sum().plot(kind='bar')
+graph3['step4_monitoring'].sum().plot(kind='bar')
+
+a2= graph3['step1_eligibility'].sum()
+b2 = graph3['step2_disp_res'].sum()
+c2=graph3['step3_com_rev'].sum()
+d2=graph3['step4_monitoring'].sum()
+f2 = pd.concat([a2,b2,c2,d2], axis=1)
+
+f2['trans1']=f2['step2_disp_res']/f2['step1_eligibility']
+f2['trans2']=f2['step3_com_rev']/f2['step1_eligibility']
+f2['trans3']=f2['step4_monitoring']/f2['step1_eligibility']
+
+
+# Fourth review by Issues_1
+graph4 = dfa.groupby('Issues_1')
+graph4['step1_eligibility'].sum().plot(kind='bar')
+graph4['step2_disp_res'].sum().plot(kind='bar')
+graph4['step3_com_rev'].sum().plot(kind='bar')
+graph4['step4_monitoring'].sum().plot(kind='bar')
+
+a3= graph4['step1_eligibility'].sum()
+b3 = graph4['step2_disp_res'].sum()
+c3=graph4['step3_com_rev'].sum()
+d3=graph4['step4_monitoring'].sum()
+f3 = pd.concat([a3,b3,c3,d3], axis=1)
+
+f3['trans1']=f3['step2_disp_res']/f3['step1_eligibility']
+f3['trans2']=f3['step3_com_rev']/f3['step1_eligibility']
+f3['trans3']=f3['step4_monitoring']/f3['step1_eligibility']
+
+

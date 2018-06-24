@@ -1,0 +1,231 @@
+---
+title: "Data Dive - Accountability Council: Draft Findings"
+author: "Data Kind"
+date: "6/23/2018"
+output:
+  html_document:
+    toc: true
+    toc-_depth: 6
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+    number_sections: false
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,warning=FALSE,message=FALSE)
+library(here)
+library(knitr)
+library(printr)
+library(kableExtra)
+library(janitor)
+library(tidyverse)
+library(gridExtra)
+library(cowplot)
+library(ggpubr)
+```
+
+### Summary
+
+IAMs which do NOT allow claimants to see or comment on draft findings have higher completion rates, while eligibility rates are are not consistent. All IAMs allow managmenet to see and comment draft findings, 
+
+<!-- # Load data  -->
+```{r}
+load(here("/Raw/benchmark_data_cleaned.Rdata")) # benchmarks_cleaned
+load(here("/Raw/benchmark_data_cleaned_melted.Rdata")) # benchmarks_melted
+load(here("/Raw/accountability_console_data_cleaned.Rdata")) # complaints
+
+dat_bench_wide <- benchmarks_cleaned
+dat_bench_long <- benchmarks_melted
+dat_compl <- complaints
+
+# Summarize percent eligible by IAM 
+dat_compl %>% 
+  # Fix IAMs in dataset
+  mutate(IAM = gsub("ABD_SPF_CRP","ADB_SPF_CRP",IAM),
+         IAM = gsub("ERBD_PCM","EBRD_PCM",IAM),
+         IAM = gsub("ERBD_IRM","EBRD_PCM",IAM),
+ # Define completed process, among those outcome
+         Status_complete = case_when(Status %in% c("Closed With Results","Monitoring") ~ "completed",
+                                     Status %in% c("Closed Without Results") ~ "not completed")) %>% 
+  group_by(IAM) %>% 
+  summarise(elig_pct =  mean(ELIGIBLE,na.rm = T),
+            elig_n = sum(!is.na(ELIGIBLE)),
+            compltd_pct =  mean(Status_complete == "completed",na.rm = T),
+            compltd_n = sum(!is.na(Status_complete))) %>% 
+  select(IAM, elig_pct,elig_n,compltd_pct,compltd_n) %>% 
+  arrange(desc(elig_pct)) ->
+  dat_eligByIAM
+```
+
+<!-- Format further -->
+```{r}
+dat_bench_long %>% 
+  rename(IAM = variable) %>% 
+  # Add eligibility sumary
+  left_join(dat_eligByIAM) %>% 
+  mutate(IAM = fct_reorder(IAM,elig_pct,desc=T)) %>% 
+  mutate(IAM_order = as.numeric(IAM),
+         # Reduce wordiness of the benchmarks
+        Benchmark = gsub("the mechanism","it",Benchmark),
+        Benchmark = gsub("management","mgmt",Benchmark),
+        Benchmark = gsub("recommendations","recom",Benchmark),
+        Benchmark = gsub("available","avail",Benchmark),
+        Benchmark = trimws(Benchmark),
+        # Variable
+        value = gsub("1","Yes",gsub("0","No",value)),
+        value_40c = str_trunc(value,40),
+        value = fct_relevel(factor(value),"Yes","No"),
+        value_40c = fct_relevel(factor(value_40c),"Yes","No")) ->
+  dat_bench_long
+```
+
+### Are draft findings made available to claimant?
+```{r}
+Category_here = "Compliance review findings or recommendations"
+benchmark_here = grep("draft findings",unique(dat_bench_long$Benchmark),value=T)[1]
+```
+
+```{r makePlot_byElig, fig.width=8,fig.height=5}
+dat_bench_long %>% 
+  filter(Category == Category_here & Benchmark == benchmark_here) %>% 
+  mutate(value_40c = fct_drop(value_40c)) ->
+  dat_here
+
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+cols = gg_color_hue(length(levels(dat_here$value_40c)))
+
+cols[rev(levels(dat_here$value_40c))=="Yes"] = "#006400"
+cols[rev(levels(dat_here$value_40c))=="No"] = "#D80000"
+
+
+dat_here %>% 
+  ggplot(aes(y=fct_rev(value_40c),x=elig_pct)) +
+  geom_text(angle=45,aes(label=IAM, col=IAM,size=elig_n)) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 10)) + 
+  xlim(0,1) +
+  labs(title = str_wrap(benchmark_here,70), subtitle="Individual IAM",y="",x="% Eligible",size="N") +
+  guides(col=FALSE,fill=F)  ->
+  plot_bar
+
+dat_here %>% 
+  ggplot(aes(fct_rev(value_40c))) +
+  geom_bar(aes(fill=fct_rev(value_40c))) +
+  coord_flip() +
+  labs(y="",x="") +
+  guides(fill=F) +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) + 
+  scale_fill_manual(values=cols) +
+  scale_y_continuous(breaks=c(2,4,6,8),limits=c(0,10)) +
+  labs(title="",subtitle="Frequency") ->
+  plot_hist
+
+arrangeGrob(plot_bar,plot_hist,                             
+             ncol = 2, nrow = 1, 
+             layout_matrix = rbind(c(1,1,1,1,2))) %>% 
+  as_ggplot
+
+# dat_compl %>% 
+#   count(ELIGIBLE, Status)
+```
+
+
+```{r makePlot_byRslt, fig.width=8,fig.height=5}
+dat_bench_long %>% 
+  filter(Category == Category_here & Benchmark == benchmark_here) %>% 
+  mutate(value_40c = fct_drop(value_40c)) ->
+  dat_here
+
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+cols = gg_color_hue(length(levels(dat_here$value_40c)))
+
+cols[rev(levels(dat_here$value_40c))=="Yes"] = "#006400"
+cols[rev(levels(dat_here$value_40c))=="No"] = "#D80000"
+
+
+dat_here %>% 
+  ggplot(aes(y=fct_rev(value_40c),x=compltd_pct)) +
+  geom_text(angle=45,aes(label=IAM, col=IAM,size=compltd_n)) +
+  scale_y_discrete(labels = function(x) str_wrap(x, width = 10)) + 
+  xlim(0,.5) +
+  labs(title = str_wrap(benchmark_here,70), subtitle="Individual IAM",y="",x="% Completed",size="N") +
+  guides(col=FALSE,fill=F)  ->
+  plot_bar
+
+dat_here %>% 
+  ggplot(aes(fct_rev(value_40c))) +
+  geom_bar(aes(fill=fct_rev(value_40c))) +
+  coord_flip() +
+  labs(y="",x="") +
+  guides(fill=F) +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) + 
+  scale_fill_manual(values=cols) +
+  scale_y_continuous(breaks=c(2,4,6,8),limits=c(0,10)) +
+  labs(title="",subtitle="Frequency") ->
+  plot_hist
+
+arrangeGrob(plot_bar,plot_hist,                             
+             ncol = 2, nrow = 1, 
+             layout_matrix = rbind(c(1,1,1,1,2))) %>% 
+  as_ggplot
+
+# dat_compl %>% 
+#   count(ELIGIBLE, Status)
+```
+
+### May claimants make comments on draft findings?
+```{r}
+benchmark_here = grep("draft findings",unique(dat_bench_long$Benchmark),value=T)[3]
+```
+
+```{r ref.label="makePlot_byElig", fig.width=8,fig.height=5}
+```
+
+```{r ref.label="makePlot_byRslt", fig.width=8,fig.height=5}
+```
+
+### Are claimants informed of draft findings before a report is made to the President / Board?
+```{r}
+benchmark_here = grep("draft findings",unique(dat_bench_long$Benchmark),value=T)[4]
+```
+
+```{r ref.label="makePlot_byElig", fig.width=8,fig.height=5}
+```
+
+
+```{r ref.label="makePlot_byRslt", fig.width=8,fig.height=5}
+```
+
+
+### Are draft findings made avail to mgmt?
+```{r}
+benchmark_here = grep("draft findings",unique(dat_bench_long$Benchmark),value=T)[2]
+```
+
+```{r ref.label="makePlot_byElig", fig.width=8,fig.height=5}
+```
+
+```{r ref.label="makePlot_byRslt", fig.width=8,fig.height=5}
+```
+
+
+### May mgmt make comments on draft findings?
+```{r}
+benchmark_here = grep("draft findings",unique(dat_bench_long$Benchmark),value=T)[5]
+```
+
+```{r ref.label="makePlot_byElig", fig.width=8,fig.height=5}
+```
+
+```{r ref.label="makePlot_byRslt", fig.width=8,fig.height=5}
+```
+

@@ -1,0 +1,1 @@
+mosaicplot(table(acc[ELIGIBLE==0 & If_No_Eligibility_Why_1!='Unknown',.(IAM,If_No_Eligibility_Why_1)]),las=2,ylab="Reason for ineligibility",main="What are their excuses?",border=NA)

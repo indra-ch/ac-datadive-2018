@@ -1,0 +1,16 @@
+load("accountability_console_data_cleaned.RData")
+load("benchmark_data_cleaned.RData")
+load("benchmark_data_cleaned_melted.RData")
+
+library(tidyverse)
+library(lubridate)
+
+complaints %>%
+  mutate(Year_Filed = year(Filing_Date)) %>%
+  filter(!is.na(ELIGIBLE) & !is.na(Year_Filed) & (
+    IAM %in% c("ERBD_PCM","IFC_CAO","ABD_SPF_CRP","WB_Panel")
+  )) %>%
+  ggplot(aes(factor(Year_Filed), fill=factor(ELIGIBLE))) +
+  geom_bar() +
+  facet_wrap(~IAM,ncol = 1) +
+  labs(title="Eligibility success over time",x="Year filed",fill="Eligible",y="Count of complaints")
