@@ -64,6 +64,68 @@ def get_project_documents(page):
         return None
 
 
+def to_date(date_str, format='%d/%m/%Y'):
+    timestamp = pd.to_datetime(date_str, format=format)
+    date = timestamp.date()
+    return date
+
+
+def is_date_str(val):
+    return (
+        isinstance(val, str) and val[-4:].isnumeric()
+        and len(val.split('/')) == 3
+    )
+
+
+def stage_dict_to_list(data):
+    index =  [
+        'date_filed',
+        'date_registered',
+        'eligibility',
+        'compliance_review_start_date',
+        'compliance_review_end_date',
+        'date_closed',
+        'monitoring',
+        'dispute_resolution_start_date'
+    ]
+    s = pd.Series(data, index=index)
+    return list(s.values)
+
+
+def scrape_stages(html):
+    ac_field_mapping = {
+        'Received Date': 'date_filed',
+        'Admissibility': 'date_registered',
+        'Assessment': 'eligibility',
+        'Investigation': 'compliance_review_start_date',
+        'Mediation': 'dispute_resolution_start_date',
+        'Consultation': 'compliance_review_end_date',
+        'Closed': 'date_closed',
+        'Follow Up': 'monitoring',
+        'Escalated to EO': 'escalated'
+    }
+    main_div = html.find('div', {'id': 'consultations'})
+    case_data = {}
+    try:
+        received_date = to_date(main_div.find(
+            'div', {'class': 'caseDate'}).contents[0])
+    except:
+        received_date = to_date(str(main_div).split(':')[2][1:11])
+    case_data['date_filed'] = received_date
+    sub_divs = main_div.find_all('div', {'class': 'statusBar'})
+    for sub_div in sub_divs:
+        label = sub_div.find('a').contents[0].split('\xa0')[0]
+        try:
+            val = sub_div.find('div', {'class': 'caseDate'}).contents[0]
+        except:
+            continue
+        if is_date_str(val):
+            val = to_date(val)
+        ac_field = ac_field_mapping[label]
+        case_data[ac_field] = val
+    return stage_dict_to_list(case_data)
+
+
 def scrape(html):
     ## GET PROJECT TABLE
     df = get_project_table(html)
@@ -96,12 +158,15 @@ def scrape(html):
             documents = get_project_documents(page)
             if documents:
                 cleaned_id = project_id.replace('/', '_').replace(': ', '')
-                scraperutils.check_make_directory('eib', cleaned_id)
+                scraperutils.check_make_directory(cleaned_id)
                 for doc in documents.split(','):
                     filepath = scraperutils.download_project_documents('http://' + doc,
-                                                                       'eib',
                                                                        cleaned_id)
-            project_data.append([idx, clean(project_id), clean(filer), documents])
+            stage_data = scrape_stages(page)
+            project_data.append(
+                [idx, clean(project_id), clean(filer), documents]
+                + stage_data
+            )
         else:
             count404 += 1
             url404.append(url)
@@ -113,7 +178,21 @@ def scrape(html):
     print('Number of 404 Responses', count404)
 
     ## Merge into DF and return 
-    project_data = pd.DataFrame(project_data,columns=['idx','project id','Filer(s)', 'documents'])
+    columns = [
+        'idx',
+        'project id',
+        'Filer(s)',
+        'documents',
+        'date_filed',
+        'date_registered',
+        'eligibility',
+        'compliance_review_start_date',
+        'compliance_review_end_date',
+        'date_closed',
+        'monitoring',
+        'dispute_resolution_start_date'
+    ]
+    project_data = pd.DataFrame(project_data,columns=columns)
     project_data.index = project_data.idx
     project_data = project_data.drop('idx',axis=1)
     df = pd.concat([df, project_data],axis=1)
@@ -139,24 +218,72 @@ def run():
     df['IAM ID'] = 29
     df['registration_start_date'] = df['Received Date'] ## This is in the AC code but may not be what they actually want. 
     df['year'] = [i[-4:] for i in df['Received Date']]
+    df['registration_start_date'] = df['registration_start_date'].apply(to_date)
+    df = df.drop('Received Date', axis=1)
+    date_cols = [col for col in df.columns if 'date' in col]
+    df['eligibility_start_date'] = df['date_registered'].copy()
+    # TODO: Add stage logic
+    df['dispute_resolution_end_date'] = df['compliance_review_end_date'].where(
+        (df['compliance_review_end_date'] > df['compliance_review_end_date']),
+        (df[date_cols].max(axis=1))
+    )
+    df['monitoring_start_date'] = df['date_closed']
+    df['monitoring_end_date'] = pd.NaT
 
 
     data_model_conforming = {
-	'Received Date'          :'FILING_DATE'             ,
-	'Case Name'              :'PROJECT_NAME'            ,
-	'Country/Territory'      :'COUNTRY'                 ,
-	'project id'             :'PROJECT_ID'              ,
-	'urls'                   :'HYPERLINK'               ,
-	'Filer(s)'               :'FILERS'                  ,
-	'IAM'                    :'IAM'                     ,
-	'IAM ID'                 :'IAM_ID'                  ,
-	'registration_start_date':'REGISTRATION_START_DATE' ,
-	'Current Status'         :'COMPLAINT_STATUS'        ,  
-	'year'                   :'YEAR'                    ,
-	'documents'              :'DOCUMENTS'
+    'Case Name'                     :'PROJECT_NAME'                 ,
+    'Country/Territory'             :'COUNTRY'                      ,
+    'project id'                    :'PROJECT_ID'                   ,
+    'Type'                          :'PROJECT_TYPE'                 ,
+    'Allegations'                   :'ISSUES'                       ,
+    'Last Stage Completed'          :'LAST_STAGE_COMPLETED'         ,
+    'urls'                          :'HYPERLINK'                    ,
+    'Filer(s)'                      :'FILERS'                       ,
+    'IAM'                           :'IAM'                          ,
+    'IAM ID'                        :'IAM_ID'                       ,
+    'registration_start_date'       :'REGISTRATION_START_DATE'      ,
+    'Current Status'                :'COMPLAINT_STATUS'             ,  
+    'year'                          :'YEAR'                         ,
+    'documents'                     :'DOCUMENTS'                    ,
+    'date_filed'                    :'FILING_DATE'                  ,
+    'date_registered'               :'REGISTRATION_END_DATE'        ,
+    'eligibility_start_date'        :'ELIGIBILITY_START_DATE'       ,
+    'eligibility'                   :'ELIGIBILITY_END_DATE'         ,
+    'compliance_review_start_date'  :'COMPLIANCE_REVIEW_START_DATE' ,
+    'compliance_review_end_date'    :'COMPLIANCE_REVIEW_END_DATE'   ,
+    'date_closed'                   :'DATE_CLOSED'                  ,
+    'monitoring'                    :'MONITORING_START_DATE'          ,
+    'dispute_resolution_start_date' :'DISPUTE_RESOLUTION_START_DATE',
+    'dispute_resolution_end_date'   :'DISPUTE_RESOLUTION_END_DATE'  ,
+    'monitoring_end_date'           :'MONITORING_END_DATE'
     }
     output_df = df.copy()
     output_df = output_df.rename(columns = data_model_conforming)
+    output_df = output_df[[  # Reorder columns
+        'IAM',
+        'IAM_ID',
+        'YEAR',
+        'COUNTRY',
+        'PROJECT_NAME',
+        'PROJECT_ID',
+        'PROJECT_TYPE',
+        'ISSUES',
+        'FILERS',
+        'FILING_DATE',
+        'COMPLAINT_STATUS',
+        'DATE_CLOSED',
+        'REGISTRATION_START_DATE',
+        'REGISTRATION_END_DATE',
+        'ELIGIBILITY_START_DATE',
+        'ELIGIBILITY_END_DATE',
+        'DISPUTE_RESOLUTION_START_DATE',
+        'DISPUTE_RESOLUTION_END_DATE',
+        'COMPLIANCE_REVIEW_START_DATE',
+        'COMPLIANCE_REVIEW_END_DATE',
+        'MONITORING_START_DATE',
+        'MONITORING_END_DATE'
+    ]]
 
     output_data = []
     for ix, r in output_df.iterrows():
@@ -164,7 +291,6 @@ def run():
        output_data.append(temp)
 
     return output_data
-        
 
 if __name__ == '__main__':
     formatted_data = run()
