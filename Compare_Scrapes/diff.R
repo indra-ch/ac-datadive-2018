@@ -14,6 +14,7 @@ df_new <- read.csv(df_new_name,stringsAsFactors = FALSE)
 
 # set the timestamp based on the scrape date of the new file
 new.file.scrap.date <- substr(as.numeric(gsub("\\D", "", df_new_name)) , start = 1, stop = 8)
+old.file.scrap.date <- substr(as.numeric(gsub("\\D", "", df_old_name)) , start = 1, stop = 8)
 
 # create unique ID
 df_old$pid <- paste(df_old$IAM_id, df_old$project_id, df_old$project_name, sep="-")
@@ -96,9 +97,14 @@ diffviz_out <- rename(diffviz_out,
                       URL = hyperlink)
 
 # add "critical" fields here - defined as fields that go from having a value to having no value
-critical_list = c('complaint status', 'eligibility_start_date')
+critical_list = c('complaint_status', 'eligibility_start_date')
 diffviz_out = diffviz_out %>%
   mutate(Criticality = ifelse(Field %in% critical_list & is.na(Previous_Value)==F & 
                                 is.na(Current_Value)==T, "High", "Normal"))
 
-write.csv(diffviz_out,"diffviz_out.csv", row.names = F)
+filename = paste('current_change_log', old.file.scrap.date, new.file.scrap.date, sep='_')
+write.csv(diffviz_out, filename, row.names = F)
+
+master_changes = read.csv('master_change_log.csv', stringsAsFactors = F)
+master_changes = rbind(master_changes, diffviz_out)
+write.csv(master_changes, 'master_change_log.csv', stringsAsFactors = F)
